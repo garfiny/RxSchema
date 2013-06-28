@@ -1,0 +1,5 @@
+#!/usr/bin/env ruby
+
+require 'rxschema'
+
+RxSchema::XSDParser.parse(file: File.open(ARGV[0]))
