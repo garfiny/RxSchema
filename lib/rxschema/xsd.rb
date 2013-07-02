@@ -4,4 +4,5 @@ module RxSchema
 end
 require 'rxschema/xsd/xml_element'
 require 'rxschema/xsd/schema'
+require 'rxschema/xsd/element'
 require 'rxschema/xsd/attribute'

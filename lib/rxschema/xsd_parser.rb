@@ -2,7 +2,7 @@ require 'nokogiri'
 
 class RxSchema::XSDParser
 
-  def self.parse(event_handler: RxSchema::EventHandler.new(self.new), file: nil)
+  def self.parse(event_handler: RxSchema::SAXEventHandler.new(self.new), file: nil)
     if file
       parser = Nokogiri::XML::SAX::Parser.new(event_handler)
       parser.parse(file)
@@ -10,9 +10,6 @@ class RxSchema::XSDParser
   end
 
   def initialize
-    @stack = RxSchema::ElementStack.new
-    @builder = RxSchema::ElementStructBuilder.new
-    @current_schema = nil
     @schemas = []
   end
 
@@ -20,12 +17,39 @@ class RxSchema::XSDParser
   end
 
   def end_parsing
+    binding.pry
   end
 
-  def add_schema(prefix, nampespaces, attributes)
-    Struct.new("Schema")
+  def add_schema(schema)
+    @schemas << schema
   end
 
-  def add_element
+  def current_schema
+    @schemas.last if @schemas.last.open?
+  end
+
+  def current_element
+    current_schema.try(:last_element)
+  end
+
+  def last_element_of_schema(schema)
+    schema.last_element
+  end
+
+  def has_parent_element?
+    !last_element_of_schema(current_schema).blank? &&
+      last_element_of_schema(current_schema).open?
+  end
+
+  def add_element(element)
+    if has_parent_element?
+      last_element_of_schema(current_schema).add_element(element)
+    else
+      current_schema.add_element(element)
+    end
+  end
+
+  def close_element(qname)
+    current_element.close! if current_element.qname == qname
   end
 end

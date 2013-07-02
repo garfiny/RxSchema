@@ -1,23 +1,18 @@
-class RxSchema::XSD::Schema
-  include RxSchema::XSD::XMLElement
+class RxSchema::XSD::Schema < RxSchema::XSD::XMLElement
 
-  attr_accessor :prefix
+  attr_accessor :namespaces
 
   def initialize
-    @namespaces ||= {}
-    @attributes ||= []
+    @namespaces = {}
+    super
   end
 
   def self.new_schema(prefix = nil, xmlns = {}, attrs = [])
-    schema = self.new
-    schema.prefix = prefix
-    xmlns.each { |key, value| schema.add_xmlns(key, value) }
-    attrs.each { |attr| schema.add_attribute(attr) }
-    schema
+    self.init_xml_element(prefix, xmlns, attrs)
   end
 
   def add_xmlns(prefix, uri)
-    @namespaces[prefix] = uri
+    @namespaces[prefix] = uri unless @namespaces.has_key?(prefix)
   end
 
   def namespaces

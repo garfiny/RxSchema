@@ -6,9 +6,6 @@ class RxSchema::SAXEventHandler < Nokogiri::XML::SAX::Document
     @parser = parser
   end
 
-  def element_struct
-  end
-
   def start_document
     @parser.start_parsing
   end
@@ -22,17 +19,13 @@ class RxSchema::SAXEventHandler < Nokogiri::XML::SAX::Document
     namespace_hash = ns_to_hash(ns)
     if schema?(name, uri)
       @parser.add_schema(RxSchema::XSD::Schema.new_schema(prefix, namespace_hash, attributes))
-    elsif element?(name, uri)
-
-    end
-    if element_tag_name == 'element'
-      @stack.push(@builder.build(element_tag_name: name, tag_prefix: prefix, **attrs))
-    elsif element_tag_name == 'attribute'
+    elsif element?(name)
+      @parser.add_element(RxSchema::XSD::Element.new_element(@parser.current_schema, prefix, namespace_hash, attributes))
     end
   end
 
   def convert_attributes(attrs)
-    attrs.map { |attr| RxSchema::XSD::Attribute.new(attr.name, attr.value, attr.prefix) }
+    attrs.map { |attr| RxSchema::XSD::Attribute.new(attr.localname, attr.value, attr.prefix) }
   end
 
   def ns_to_hash(ns)
@@ -48,7 +41,7 @@ class RxSchema::SAXEventHandler < Nokogiri::XML::SAX::Document
   end
 
   def end_element_namespace(name, prefix = nil, uri = nil)
-    p "================== end_element_namespace: #{name}"
+    @parser.close_element((prefix.blank? ? "" : prefix) + name)
   end
 
   def cdata_block(str)
