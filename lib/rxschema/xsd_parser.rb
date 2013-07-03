@@ -9,6 +9,8 @@ class RxSchema::XSDParser
     end
   end
 
+  attr_reader :schemas
+
   def initialize
     @schemas = []
   end
@@ -40,6 +42,7 @@ class RxSchema::XSDParser
     !last_element_of_schema(current_schema).blank? &&
       last_element_of_schema(current_schema).open?
   end
+  private :has_parent_element?
 
   def add_element(element)
     if has_parent_element?
@@ -50,6 +53,6 @@ class RxSchema::XSDParser
   end
 
   def close_element(qname)
-    current_element.close! if current_element.qname == qname
+    current_element.try(:close!) if current_element.qname == qname
   end
 end

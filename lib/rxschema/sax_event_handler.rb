@@ -4,6 +4,7 @@ class RxSchema::SAXEventHandler < Nokogiri::XML::SAX::Document
 
   def initialize(parser)
     @parser = parser
+    @current_schema_prefix = nil
   end
 
   def start_document
@@ -17,10 +18,18 @@ class RxSchema::SAXEventHandler < Nokogiri::XML::SAX::Document
   def start_element_namespace(name, attrs = [], prefix = nil, uri = nil, ns = [])
     attributes = convert_attributes(attrs)
     namespace_hash = ns_to_hash(ns)
+    qname = (prefix.nil? ? "" : prefix + ":") + name
     if schema?(name, uri)
+      @current_schema_prefix = prefix
       @parser.add_schema(RxSchema::XSD::Schema.new_schema(prefix, namespace_hash, attributes))
-    elsif element?(name)
+    elsif element?(qname)
       @parser.add_element(RxSchema::XSD::Element.new_element(@parser.current_schema, prefix, namespace_hash, attributes))
+    elsif complexType?(qname)
+    # elsif simple_type?(qname)
+    #   element = RxSchema::XSD::Element.new_element(@parser.current_schema, prefix, namespace_hash, attributes)
+    #   element.simple_content!
+    #   @parser.add_element(element)
+    else
     end
   end
 
@@ -36,8 +45,16 @@ class RxSchema::SAXEventHandler < Nokogiri::XML::SAX::Document
     name.downcase == 'schema' && uri == RxSchema::NS_SCHEMA
   end
 
-  def element?(name)
-    name.downcase == 'element'
+  def element?(qname)
+    qname == "#{@current_schema_prefix}:element"
+  end
+
+  def simple_type?(qname)
+    qname == "#{@current_schema_prefix}:simpleType"
+  end
+
+  def complex_type?(qname)
+    qname == "#{@current_schema_prefix}:complexType"
   end
 
   def end_element_namespace(name, prefix = nil, uri = nil)
