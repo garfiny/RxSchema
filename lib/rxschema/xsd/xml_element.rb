@@ -1,21 +1,27 @@
 class RxSchema::XSD::XMLElement
 
-  attr_accessor :prefix, :attributes, :status, :elements
+  attr_accessor :prefix, :attributes, :status, :elements, :schema, :uri
 
   def initialize
     @attributes = []
     @elements   = []
     @status     = :open
+    @schema     = nil
+    @uri        = nil
   end
 
-  def self.init_xml_element(prefix = nil, xmlns = {}, attrs = [])
+  def self.new_instance(prefix = nil, uri = nil, xmlns = {}, attrs = [])
     instance = self.new
     instance.prefix = prefix
+    instance.uri = uri
     if instance.respond_to?(:add_xmlns)
       xmlns.each { |key, value| instance.add_xmlns(key, value) }
     end
     attrs.each { |attr| instance.add_attribute(attr) }
     instance
+  end
+
+  def register(schema, parent)
   end
 
   def qname
@@ -59,5 +65,15 @@ class RxSchema::XSD::XMLElement
 
   def last_element
     @elements.last
+  end
+
+  def in_same_namespace(element)
+    self.target_namespace_uri == element.target_namespace_uri
+  end
+
+  def target_namespace_uri
+    return self.target_namespace if self.respond_to?(:target_namespace)
+    return nil if self.prefix.blank?
+    schema.get_uri_by_prefix(self.prefix) if schema
   end
 end

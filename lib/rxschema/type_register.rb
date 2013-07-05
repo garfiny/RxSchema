@@ -1,7 +1,7 @@
 class RxSchema::TypeRegister
 
   def initialize
-    @type_elements = {}
+    @registered_types = {}
   end
 
   def register_type(type_name, element)

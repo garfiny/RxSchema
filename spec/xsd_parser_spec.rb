@@ -5,8 +5,29 @@ describe RxSchema::XSDParser do
   let(:parser) { RxSchema::XSDParser.new }
 
   describe '#parse' do
-
     it 'parses xsd file' do
+    end
+  end
+
+  describe '#add_xml_element' do
+    let(:schema) do
+      schema = RxSchema::XSD::Schema.new
+      schema.uri = RxSchema::NS_SCHEMA
+      schema
+    end
+    let(:element) { elemenet = RxSchema::XSD::Element.new }
+    
+    context 'when passed xml element is a schema' do
+      it 'addx xml element into schema' do
+        parser.should_receive(:add_schema).with(schema)
+        parser.add_xml_element(schema)
+      end
+    end
+    context 'when passed xml element is not a schema' do
+      it 'adds xml element into elements' do
+        parser.should_receive(:add_element).with(element)
+        parser.add_xml_element(element)
+      end
     end
   end
 
@@ -35,5 +56,14 @@ describe RxSchema::XSDParser do
   end
 
   describe '#add_element' do
+    let(:element) { elemenet = RxSchema::XSD::Element.new }
+    before do
+      parser.add_schema(mock('schema', open?: true, last_element: mock('element', open?: true)))
+    end
+
+    it 'registers itself' do
+      element.should_receive(:register)
+      parser.add_element(element)
+    end
   end
 end

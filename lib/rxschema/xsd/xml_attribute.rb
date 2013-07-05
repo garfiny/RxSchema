@@ -1,4 +1,4 @@
-class RxSchema::XSD::Attribute
+class RxSchema::XSD::XMLAttribute
 
   attr_accessor :raw_name, :name, :prefix, :value
 

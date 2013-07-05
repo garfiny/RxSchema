@@ -4,7 +4,6 @@ class RxSchema::SAXEventHandler < Nokogiri::XML::SAX::Document
 
   def initialize(parser)
     @parser = parser
-    @current_schema_prefix = nil
   end
 
   def start_document
@@ -16,46 +15,10 @@ class RxSchema::SAXEventHandler < Nokogiri::XML::SAX::Document
   end
 
   def start_element_namespace(name, attrs = [], prefix = nil, uri = nil, ns = [])
-    attributes = convert_attributes(attrs)
-    namespace_hash = ns_to_hash(ns)
-    qname = (prefix.nil? ? "" : prefix + ":") + name
-    if schema?(name, uri)
-      @current_schema_prefix = prefix
-      @parser.add_schema(RxSchema::XSD::Schema.new_schema(prefix, namespace_hash, attributes))
-    elsif element?(qname)
-      @parser.add_element(RxSchema::XSD::Element.new_element(@parser.current_schema, prefix, namespace_hash, attributes))
-    elsif complexType?(qname)
-    # elsif simple_type?(qname)
-    #   element = RxSchema::XSD::Element.new_element(@parser.current_schema, prefix, namespace_hash, attributes)
-    #   element.simple_content!
-    #   @parser.add_element(element)
-    else
-    end
+    return unless element_class_defined?(name)
+    @parser.add_xml_element(create_xml_element(name, attrs, prefix, uri, ns))
   end
 
-  def convert_attributes(attrs)
-    attrs.map { |attr| RxSchema::XSD::Attribute.new(attr.localname, attr.value, attr.prefix) }
-  end
-
-  def ns_to_hash(ns)
-    Hash[*ns.flatten]
-  end
-
-  def schema?(name, uri = nil)
-    name.downcase == 'schema' && uri == RxSchema::NS_SCHEMA
-  end
-
-  def element?(qname)
-    qname == "#{@current_schema_prefix}:element"
-  end
-
-  def simple_type?(qname)
-    qname == "#{@current_schema_prefix}:simpleType"
-  end
-
-  def complex_type?(qname)
-    qname == "#{@current_schema_prefix}:complexType"
-  end
 
   def end_element_namespace(name, prefix = nil, uri = nil)
     @parser.close_element((prefix.blank? ? "" : prefix) + name)
@@ -84,5 +47,27 @@ class RxSchema::SAXEventHandler < Nokogiri::XML::SAX::Document
   def xmldecl(version, encoding, standalone)
     # p "================== xmldecl"
     # p version, encoding, standalone
+  end
+
+  private
+
+  def element_class_defined?(element_name)
+    RxSchema::XSD.const_defined? element_name.camelize.to_sym
+  end
+
+  def create_xml_element(element_name, attrs = [], prefix = nil, uri = nil, ns = [])
+    element_class(element_name).new_instance(prefix, uri, ns_to_hash(ns), xml_attributes(attrs))
+  end
+
+  def element_class(element_name)
+    "RxSchema::XSD::#{element_name.camelize}".constantize
+  end
+
+  def xml_attributes(attrs)
+    attrs.map { |attr| RxSchema::XSD::XMLAttribute.new(attr.localname, attr.value, attr.prefix) }
+  end
+
+  def ns_to_hash(ns)
+    Hash[*ns.flatten]
   end
 end

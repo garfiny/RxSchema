@@ -3,12 +3,8 @@ class RxSchema::XSD::Schema < RxSchema::XSD::XMLElement
   attr_accessor :namespaces
 
   def initialize
-    @namespaces = {}
+    @namespaces = {}.with_indifferent_access
     super
-  end
-
-  def self.new_schema(prefix = nil, xmlns = {}, attrs = [])
-    self.init_xml_element(prefix, xmlns, attrs)
   end
 
   def add_xmlns(prefix, uri)
@@ -17,6 +13,10 @@ class RxSchema::XSD::Schema < RxSchema::XSD::XMLElement
 
   def namespaces
     @namespaces
+  end
+
+  def get_uri_by_prefix(prefix)
+    @namespaces[prefix]
   end
 
   class ::XSDSpecification

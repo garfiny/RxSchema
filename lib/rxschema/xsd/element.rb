@@ -1,35 +1,35 @@
 class RxSchema::XSD::Element < RxSchema::XSD::XMLElement
 
-  attr_accessor :schema, :type_name
+  attr_accessor :schema
 
   def initialize
     @schema = nil
-    @type_name = 'not_registered'
+    @namespaces = {}
+    @parent = nil
     super
   end
 
-  def self.new_element(schema, prefix = nil, xmlns = {}, attrs = [])
-    elem = self.init_xml_element(prefix, xmlns, attrs)
-    elem.schema = schema
-    elem.set_type_name
-    elem
+  def register(schema, parent)
+    raise "Element has to be defined within a Schema tag" if schema.blank?
+    if parent.blank?
+      schema.add_element(self)
+    else
+      parent.add_element(self)
+      @parent = parent
+    end
   end
 
-  def xsd_type?
-    prefix, name = type_name.split(":")
-    prefix == @schema.prefix
-  end
-
-  def self_defined_type?
-    !self.xsd_type?
-  end
-
-  def set_type_name
-    self.type_name = self.respond_to?(:type) ? self.type : self.name + "Type"
+  def schema=(schema)
+    @namespaces.each { |key, value| schema.add_xmlns(key, value) }
+    super
   end
 
   def add_xmlns(prefix, uri)
-    @schema.add_xmlns(prefix, uri)
+    if @schema
+      @schema.add_xmlns(prefix, uri) 
+    else
+      @namespaces[prefix] = uri
+    end
   end
 
   def close_element

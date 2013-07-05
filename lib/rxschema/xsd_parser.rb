@@ -22,6 +22,14 @@ class RxSchema::XSDParser
     binding.pry
   end
 
+  def add_xml_element(xml_element)
+    if schema?(xml_element)
+      self.add_schema(xml_element) 
+    else
+      self.add_element(xml_element)
+    end
+  end
+
   def add_schema(schema)
     @schemas << schema
   end
@@ -30,29 +38,31 @@ class RxSchema::XSDParser
     @schemas.last if @schemas.last.open?
   end
 
+  def add_element(element)
+    element.register(current_schema, current_open_element)
+  end
+
+  def close_element(qname)
+    current_open_element.close! if current_open_element && current_open_element.qname == qname
+  end
+
   def current_element
     current_schema.try(:last_element)
   end
+  private
 
   def last_element_of_schema(schema)
     schema.last_element
   end
 
-  def has_parent_element?
-    !last_element_of_schema(current_schema).blank? &&
-      last_element_of_schema(current_schema).open?
-  end
-  private :has_parent_element?
-
-  def add_element(element)
-    if has_parent_element?
-      last_element_of_schema(current_schema).add_element(element)
-    else
-      current_schema.add_element(element)
+  def current_open_element
+    if !last_element_of_schema(current_schema).blank? && last_element_of_schema(current_schema).open?
+      last_element_of_schema(current_schema) 
     end
   end
 
-  def close_element(qname)
-    current_element.try(:close!) if current_element.qname == qname
+  def schema?(xml_element)
+    xml_element.class.name.demodulize.downcase == 'schema' && 
+      xml_element.uri == RxSchema::NS_SCHEMA
   end
 end
